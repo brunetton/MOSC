@@ -142,7 +142,7 @@ class LayoutMapper(object):
 
 if __name__ == "__main__":
     # TODO: More usable configuration. GUI?
-    layoutpath, moscpath, remotepath = sys.argv[1:]
+    layoutpath, moscpath, remotepath, oscport, cubasetomosc, mosctocubase = sys.argv[1:]
     
     zf = zipfile.ZipFile(layoutpath)
     for name in zf.namelist():
@@ -153,7 +153,7 @@ if __name__ == "__main__":
     cm = cubasemapper.CubaseMapper()
     lm = LayoutMapper(tree, cm)
     lm.generatemapping()
-    mosc_config = {"interfaces": [["osc", [10000]], ["midi", ["LM OSC Out", "LM OSC In"]]],
+    mosc_config = {"interfaces": [["osc", [int(oscport)]], ["midi", [cubasetomosc, mosctocubase]]],
                    "mapping": lm.moscmap}
     yaml.dump(mosc_config, open(moscpath, "w"))
     open(remotepath, "w").write(cm.dump())
