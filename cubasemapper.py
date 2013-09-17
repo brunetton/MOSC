@@ -21,9 +21,9 @@ import xml.etree.ElementTree as ET
 import StringIO
 
 class CubaseMapper(object):
-    PUSH     = 0b000000001
-    TOGGLE   = 0b010000000
-    NO_AUTO  = 0b100000000
+    PUSH     = 0b0000000001
+    TOGGLE   = 0b0010000000
+    NO_AUTO  = 0b1000000000
 
     def __init__(self):
         self.root = ET.Element("remotedescription", version="1.1")
@@ -47,7 +47,7 @@ class CubaseMapper(object):
             raise Exception("wtf %s" % (parts,))
 
     def _addentry(self, entryname):
-        entry = ET.SubElement(self.bank, "entry", name=entryname)
+        entry = ET.SubElement(self.bank, "entry", ctrl=entryname)
         entry.tail = "\n"
         return entry
 
@@ -68,6 +68,7 @@ class CubaseMapper(object):
         ET.SubElement(ctrl, "name").text = name
         ET.SubElement(ctrl, "stat").text = self.STATS[type]
         ET.SubElement(ctrl, "chan").text = str(channel)
+        ET.SubElement(ctrl, "addr").text = str(code)
         ET.SubElement(ctrl, "max").text = self.MAXES[type]
         
         flags = self.RECEIVE
@@ -82,7 +83,7 @@ class CubaseMapper(object):
         command = ET.SubElement(entry, "command")
         ET.SubElement(command, "category").text = category
         ET.SubElement(command, "action").text = action
-        ET.SubElement(command, "flags").text = self.PUSH
+        ET.SubElement(command, "flags").text = str(self.PUSH)
 
     def _addvalue(self, entry, device, channel, name, flags):
         value = ET.SubElement(entry, "value")

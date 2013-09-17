@@ -32,19 +32,19 @@ Map files
 The MOSC map file is in yaml format as follows through example:
 
 ```yaml
-interfaces: # List of interfaces, usually one OSC and one Midi. The order counts!
-- [osc, [10000]] # OSC initializer. Only one port is used for input and output. Client IP can be added after the port number.
-- [midi, ["LM Cubase to MOSC", "LM MOSC to Cubase"]] # Midi initializer. These are names of the Midi interfaces to use.
-                                                     # Usually this would be a virtual devices such as LoopMidi (http://www.tobias-erichsen.de/software/loopmidi.html)
-                                                     # The first interface is INPUT for MOSC and the second is OUTPUT from MOSC.
+interfaces: # List of interfaces, one OSC and one Midi
+  osc: 10000 # OSC initializer. Only one port is used for input and output. Client IP can be added after the port number.
+  midi: [LM Cubase to MOSC, LM MOSC to Cubase] # Midi initializer. These are names of the Midi interfaces to use.
+                                               # Usually this would be a virtual devices such as LoopMidi (http://www.tobias-erichsen.de/software/loopmidi.html)
+                                               # The first interface is INPUT for MOSC and the second is OUTPUT from MOSC.
 mapping:    # This is the mapping of interfaces, the values are ordered as in the interfaces above
 - [/1/volume, 10]   # This maps OSC address "/1/volume" from values 0.0-1.0 to the Midi NRPN 10, to values 0-16383
 - [/1/pan, 11]      # If no further value is written, (NRPN, 0-16383, channel 0) will be used.
 - [/1/mute, [10, "noteon"]] # If different values are needed, the values must be given as a lsit
 - [/1/play, [12, "noteon", 0, 127, 3]]  # Further values are rangemin, rangemax and channel
 - [/encoderM, [11, "noteon", 1, 127]]   # Relative values should be given between 1 and 127 for Cubase to process them as expected
-- [/5/xy1 1, 13]  # xy pads send 2 values instead of one. In order to decide which one is mapped, the index is given after a space in the address
-- [/5/xy1 0, 14]  # The Y value goes to NRPN 14 while the X value goes to NRPN 13
+- [[/5/xy1, 0], 13]  # xy pads send 2 values instead of one. In order to decide which one is mapped, the index is given in a tuple
+- [[/5/xy1, 1], 14, ">"]  # The Y value goes to NRPN 14 while the X value goes to NRPN 13. Values are sent from OSC to midi, but not back.
 ```
 
 Mapping TouchOSC layouts
@@ -73,7 +73,7 @@ Commands are given using only two values such as "Transport;Stop".
 According to the controller used, different Midi messages would be mapped.
 Faders and Rotaries are mapped to NRPNs.
 Toggles and Push are mapped to noteon
-Rotary is mapped to noteon with range of 1, 127 and set to relative.
+Encoder is mapped to noteon with range of 1, 127 and set to relative.
 
 Optional flags are gives as follows:
 Mixer;Selected;Volume|PTN <-- P, T and N are the same as in the Generic Remote page in Cubase (Push button, Toggle, Not Automated).
@@ -86,7 +86,7 @@ Mixer;<x>;Volume on a 8 bar multifader will add 8 mappings, for channels from 0 
 (Future note, more manipulations will be added to allow offset from the given "x")
 
 xy controllers are split by a comma.
-Mixer;Selected;eq1:freq,Mixer;Selected;eq1:gain will give a nice visual representation of the peak in the Cubase equalizer.
+For example, Mixer;Selected;eq1:freq,Mixer;Selected;eq1:gain will give a nice visual representation of the peak in the Cubase equalizer.
     
 History
 =======

@@ -121,4 +121,5 @@ class MidiInterface(interface.Interface):
             else:
                 if info[3]:
                     return pym.Output(i)
+        raise Exception("Interface (%s, input=%s) was not found!" % (name, is_input))
 

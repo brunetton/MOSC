@@ -65,9 +65,9 @@ class LayoutMapper(object):
 
     def _parsename(self, name):
         if "|" not in name:
-            return name, 0, 0
+            return name, 0, 0, None
         
-        name, flags = name.resplit("|", 1)
+        name, flags = name.rsplit("|", 1)
 
         rel = 0
         if "+" in flags:
@@ -77,31 +77,34 @@ class LayoutMapper(object):
 
         flagsval = 0
         if "P" in flags:
-            flagsval |= cubasemapper.PUSH
+            flagsval |= self.cubase_mapper.PUSH
         if "T" in flags:
-            flagsval |= cubasemapper.TOGGLE
+            flagsval |= self.cubase_mapper.TOGGLE
         if "N" in flags:
-            flagsval |= cubasemapper.NO_AUTO
+            flagsval |= self.cubase_mapper.NO_AUTO
 
-        return name, flagsval, rel
+        return name, flagsval, rel, (">" in flags)
 
     def handle_single_cont(self, osc, name):
         nrpn = self._generatenrpn()
-        self.cubase_mapper.add_mapping(("nrpn", 0, nrpn), *self._parsename(name))
+        name, flagsval, rel, onewayvalue = self._parsename(name)
+        self.cubase_mapper.add_mapping(("nrpn", 0, nrpn), name, flagsval, rel != 0)
         self.moscmap.append([osc, nrpn])
 
     def handle_single_button(self, osc, name):
         note = self._generatenote()
-        name, flags, rel = self._parsename(name)
+        name, flags, rel, onewayvalue = self._parsename(name)
         self.cubase_mapper.add_mapping(("noteon", 0, note), name, flags, rel != 0)
         if rel < 0:
             self.moscmap.append([osc, [note, "noteon", 0, 1]])
+        elif onewayvalue is not None:
+            self.moscmap.append([osc, [note, "noteon"], ">"])
         else:
             self.moscmap.append([osc, [note, "noteon"]])
 
     def handle_encoder(self, osc, name):
         note = self._generatenote()
-        name, flags, rel = self._parsename(name)
+        name, flags, rel, onewayvalue = self._parsename(name)
         self.cubase_mapper.add_mapping(("noteon", 0, note), name, flags, relative=True)
         self.moscmap.append([osc, [note, "noteon", 1, 127]])
 
@@ -122,16 +125,19 @@ class LayoutMapper(object):
         assert self.tree.get("version") == "13"
         for control in self.tree.findall("tabpage/control"):
             name = control.get("name").decode("base64")
+            if ";" not in name:
+                continue
+            
             type = control.get("type")
             osc_cs = control.get("osc_cs")
             if osc_cs is None:
                 continue
-            osc_cs = osc_cs.decode("base64")
+            osc_cs = osc_cs.decode("base64") 
 
             if type == "xy":
                 partx, party = name.split(",")
-                self.handle_single_button(osc_cs + " 0", partx)
-                self.handle_single_button(osc_cs + " 1", party)
+                self.handle_single_button([osc_cs, 0], partx)
+                self.handle_single_button([osc_cs, 1], party)
                 continue
 
             if type.startswith("multi"):
@@ -153,7 +159,7 @@ if __name__ == "__main__":
     cm = cubasemapper.CubaseMapper()
     lm = LayoutMapper(tree, cm)
     lm.generatemapping()
-    mosc_config = {"interfaces": [["osc", [int(oscport)]], ["midi", [cubasetomosc, mosctocubase]]],
+    mosc_config = {"interfaces": {"osc": [int(oscport)], "midi": [cubasetomosc, mosctocubase]},
                    "mapping": lm.moscmap}
     yaml.dump(mosc_config, open(moscpath, "w"))
     open(remotepath, "w").write(cm.dump())

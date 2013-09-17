@@ -27,25 +27,11 @@ class OSCInterface(interface.Interface):
         self.server_address = "0.0.0.0", server_address if isinstance(server_address, int) else server_address
         self.server = pysc.Server(self.server_address, self._message_handler)
         self.client = None if client_address is None else pysc.Client(client_address)
-        self.memory = {}
 
-    def send(self, address, value):
+    def send(self, address, *value):
         if self.client is None:
             return
-
-        address = address.rsplit(" ", 1)
-        if len(address) == 1:
-            self.client.send(pysc.Message(address[0], value))
-            return
-        
-        address, index = address
-        if address not in self.memory:
-            self.memory[address] = [None] * min(index, 2)
-        
-        values = self.memory[address]
-        values[int(index)] = value
-        if all(v is not None for v in values):
-            self.client.send(pysc.Message(address, *values))
+        self.client.send(pysc.Message(address, *value))
 
     def _run(self):
         self.server.serve_forever()
@@ -57,10 +43,4 @@ class OSCInterface(interface.Interface):
         if self.handler is None:
             return
 
-        if len(message.args) == 1:
-            self.handler(message.address, message.args[0])
-            return
-
-        self.memory[message.address] = list(message.args)
-        for i, arg in enumerate(message.args):
-            self.handler(message.address + " " + str(i), arg)
+        self.handler(message.address, *message.args)
