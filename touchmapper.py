@@ -85,33 +85,33 @@ class LayoutMapper(object):
 
         return name, flagsval, rel, (">" in flags)
 
-    def handle_single_cont(self, osc, name):
+    def handle_single_cont(self, osc, name, localoff):
         nrpn = self._generatenrpn()
         name, flagsval, rel, onewayvalue = self._parsename(name)
-        self.cubase_mapper.add_mapping(("nrpn", 0, nrpn), name, flagsval, rel != 0)
+        self.cubase_mapper.add_mapping(("nrpn", 0, nrpn), name, flagsval, relative=(rel != 0), echo=localoff)
         self.moscmap.append([osc, nrpn])
 
-    def handle_single_button(self, osc, name):
+    def handle_single_button(self, osc, name, localoff):
         note = self._generatenote()
         name, flags, rel, onewayvalue = self._parsename(name)
-        self.cubase_mapper.add_mapping(("noteon", 0, note), name, flags, rel != 0)
+        self.cubase_mapper.add_mapping(("noteon", 0, note), name, flags, relative=(rel != 0), echo=localoff)
         if rel < 0:
             self.moscmap.append([osc, [note, "noteon", 0, 1]])
-        elif onewayvalue is not None:
+        elif onewayvalue:
             self.moscmap.append([osc, [note, "noteon"], ">"])
         else:
             self.moscmap.append([osc, [note, "noteon"]])
 
-    def handle_encoder(self, osc, name):
+    def handle_encoder(self, osc, name, localoff):
         note = self._generatenote()
         name, flags, rel, onewayvalue = self._parsename(name)
-        self.cubase_mapper.add_mapping(("noteon", 0, note), name, flags, relative=True)
+        self.cubase_mapper.add_mapping(("noteon", 0, note), name, flags, relative=True, echo=localoff)
         self.moscmap.append([osc, [note, "noteon", 1, 127]])
 
-    def handle_multi(self, osc, name, number, single):
+    def handle_multi(self, osc, name, number, single, localoff):
         for i in xrnage(number):
             # TODO: Allow offset from x
-            single(osc + "/" + str(i), name.replace("<x>", str(i)))
+            single(osc + "/" + str(i), name.replace("<x>", str(i)), localoff)
 
     def get_single_handler(self, name):
         if name in ["faderv", "faderh", "rotaryv", "rotaryh"]:
@@ -133,17 +133,20 @@ class LayoutMapper(object):
             if osc_cs is None:
                 continue
             osc_cs = osc_cs.decode("base64") 
+            
+            localoff = control.get("local_off")
+            localoff = localoff is not None and localoff == "true"
 
             if type == "xy":
                 partx, party = name.split(",")
-                self.handle_single_button([osc_cs, 0], partx)
-                self.handle_single_button([osc_cs, 1], party)
+                self.handle_single_cont([osc_cs, 0], partx, localoff)
+                self.handle_single_cont([osc_cs, 1], party, localoff)
                 continue
 
             if type.startswith("multi"):
-                self.handle_multi(cs_osc, name, control.get("number"), self.get_single_handler(type[5:]))
+                self.handle_multi(cs_osc, name, control.get("number"), self.get_single_handler(type[5:]), localoff)
                 continue
-            self.get_single_handler(type)(osc_cs, name)
+            self.get_single_handler(type)(osc_cs, name, localoff)
 
 
 if __name__ == "__main__":

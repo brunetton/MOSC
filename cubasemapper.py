@@ -22,7 +22,7 @@ import StringIO
 
 class CubaseMapper(object):
     PUSH     = 0b0000000001
-    TOGGLE   = 0b0010000000
+    TOGGLE   = 0b0110000000
     NO_AUTO  = 0b1000000000
 
     def __init__(self):
@@ -33,8 +33,8 @@ class CubaseMapper(object):
         self.bank.text = self.bank.tail = "\n"
         self.name_index = 0
 
-    def add_mapping(self, address, name, flags=0, relative=False):
-        entryname = self._addctrl(address, relative)
+    def add_mapping(self, address, name, flags=0, relative=False, echo=False):
+        entryname = self._addctrl(address, relative, echo)
         entry = self._addentry(entryname)
         parts = name.split(";")
         if len(parts) == 2:
@@ -56,8 +56,10 @@ class CubaseMapper(object):
     RECEIVE  = 0b000000001
     TRANSMIT = 0b000000010
     RELATIVE = 0b000000100
-    NRPN     = 0b000001000
-    def _addctrl(self, address, relative):
+    TAKEOVER = 0b000001000
+    NRPN     = 0b000010000
+    ECHO     = 0b000100000
+    def _addctrl(self, address, relative, echo):
         ctrl = ET.SubElement(self.ctrltable, "ctrl")
         ctrl.tail = "\n"
         
@@ -75,6 +77,8 @@ class CubaseMapper(object):
         if type == "nrpn":
             flags |= self.NRPN
         flags |= self.RELATIVE if relative else self.TRANSMIT
+        if echo:
+            flags |= self.ECHO
         ET.SubElement(ctrl, "flags").text = str(flags)
 
         return name
