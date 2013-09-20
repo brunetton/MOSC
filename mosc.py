@@ -101,7 +101,7 @@ class MidiValueMapPart(MapPart):
 
 
 class OSCValueMapPart(MapPart):
-    def __init__(self, address, range_min=0.0, range_max=1.0, index=0):
+    def __init__(self, address, index=0, range_min=0.0, range_max=1.0):
         self.address = address
         self.param = range_min, range_max
         self.index = index
@@ -160,7 +160,7 @@ class ValueMapperApp(object):
         for osc_part, midi_part, direction in mapping:
             if osc_part.index > 0:
                 multi_max[osc_part.address] = max(multi_max[osc_part.address], osc_part.index)
-        return dict((addr, Multi(mx, self.osc, self.midi)) for addr, mx in multi_max.iteritems())
+        return dict((addr, Multi(mx + 1, self.osc, self.midi)) for addr, mx in multi_max.iteritems())
 
     def read_part(self, part, reader):
         if isinstance(part, list):
