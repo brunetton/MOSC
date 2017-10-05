@@ -5,13 +5,13 @@ Goals:
 - Provide a simple way to perform said mapping.
 
 The project currently consists of two parts:
-- A simple bridge between OSC (OpenSoundControl http://opensoundcontrol.org/) and a Midi interface
-- A map generator which can read TouchOSC (http://hexler.net/software/touchosc) layout files and generate mappings for MOSC and a generic remote xml for Cubase.
+- A simple bridge between OSC [OpenSoundControl](http://opensoundcontrol.org/) and a Midi interface
+- A map generator which can read [TouchOSC](http://hexler.net/software/touchosc) layout files and generate mappings for MOSC and a generic remote xml for Cubase.
 
 Used libraries:
 - OSC support is provided by the included pysc library. I might pull it to another repository as its own library.
-- Midi support is provided by PortMidi through the pygame bundle (http://www.pygame.org/).
-- yaml support is provided by pyyaml (http://pyyaml.org/).
+- Midi support is provided by PortMidi through the [pygame bundle](http://www.pygame.org/).
+- yaml support is provided by [pyyaml](http://pyyaml.org/).
 
 Being a very early version:
 - The state of documentation is non-existent.
@@ -21,10 +21,12 @@ Being a very early version:
 Usage
 =====
 MOSC:
-mosc.py mapname.txt
+
+    mosc.py mapname.txt
 
 TouchOSC layout mapper:
-touchlayout.py path_to_layout output_path_to_map output_path_to_generic_remote
+
+    touchlayout.py path_to_layout output_path_to_map output_path_to_generic_remote
 
 
 Map files
@@ -49,45 +51,58 @@ mapping:    # This is the mapping of interfaces, the values are ordered as in th
 
 Mapping TouchOSC layouts
 ========================
-Layouts must be of version 13 which is the current version of the layout manager.
-Most types of controls are supported by the system.
-Values are mapped into Midi controls, both to the MOSC mapper and a Generic Remote XML for Cubase to use.
-The actual values used should be of no concern.
-Automatic mapping uses the "name" attribute for a TouchOSC widget. The values are mapped to "entries" in the Generic Remote XML.
-Two types exist:
-Value - These are controllers in the DAW. Examples: Channel volume, Mute control. These are transmitted back to the mapper for updating the layout.
-Command - These are one-shots, performing a command in the DAW. Examples: Play, Record.
-These types are mapped differently, according to the number of values required for each.
+- Layouts must be of version 13 which is the current version of the layout manager.
+- Most types of controls are supported by the system.
+- Values are mapped into Midi controls, both to the MOSC mapper and a Generic Remote XML for Cubase to use.
+- The actual values used should be of no concern.
+- Automatic mapping uses the "name" attribute for a TouchOSC widget. The values are mapped to "entries" in the Generic Remote XML.
+
+Two **types** exist:
+- `Value`: these are controllers in the DAW.
+    - Examples: Channel volume, Mute control. These are transmitted back to the mapper for updating the layout.
+- `Command`: These are one-shots, performing a command in the DAW.
+    - Examples: Play, Record. These types are mapped differently, according to the number of values required for each.
 
 Example:
-Mixer;Selected;Volume - This would be mapped to the entry "<value><device>Mixer</device><chan>-2</chan><name>Volume</name><flags>0</flags></value>" in the generic remote.
-  |      |       \
-device   |        name
-      channel
-    either a number
-    or selected -> -2
-    or device -> -1
 
-Commands are given using only two values such as "Transport;Stop".
+`Mixer;Selected;Volume` - This would be mapped to the entry `<value><device>Mixer</device><chan>-2</chan><name>Volume</name><flags>0</flags></value>` in the generic remote.
 
-According to the controller used, different Midi messages would be mapped.
-Faders and Rotaries are mapped to NRPNs.
-Toggles and Push are mapped to noteon
-Encoder is mapped to noteon with range of 1, 127 and set to relative.
+    Mixer;Selected;Volume
+      |      |       \
+    device   |        name
+          channel
+        either a number
+        or selected -> -2
+        or device -> -1
+
+- Commands are given using only two values such as `Transport;Stop`.
+- According to the controller used, different Midi messages would be mapped.
+- Faders and Rotaries are mapped to NRPNs.
+- Toggles and Push are mapped to noteon
+- Encoder is mapped to noteon with range of 1, 127 and set to relative.
 
 Optional flags are gives as follows:
-Mixer;Selected;Volume|PTN <-- P, T and N are the same as in the Generic Remote page in Cubase (Push button, Toggle, Not Automated).
+
+`Mixer;Selected;Volume|PTN`
+
+Where P, T and N are the same as in the Generic Remote page in Cubase (Push button, Toggle, Not Automated).
 
 In order to set a button to perform a relative action, the flags "+" or "-" should be used.
 These will set the buttons to the ranges 0, 127 and and 0, 1 respectively and add the Relative flag in the Generic Remote section.
 
-Multi controls will replace a "<x>" value in the name with a running number from 0 to the count of values in the control.
-Mixer;<x>;Volume on a 8 bar multifader will add 8 mappings, for channels from 0 to 7.
+## Multi controls
+
+Multi controls will replace a `<x>` value in the name with a running number from 0 to the count of values in the control.
+
+Example: `Mixer;<x>;Volume` on a 8 bar multifader will add 8 mappings, for channels from 0 to 7.
 (Future note, more manipulations will be added to allow offset from the given "x")
 
+## xy controllers
+
 xy controllers are split by a comma.
-For example, Mixer;Selected;eq1:freq,Mixer;Selected;eq1:gain will give a nice visual representation of the peak in the Cubase equalizer.
-    
+
+Example: `Mixer;Selected;eq1:freq,Mixer;Selected;eq1:gain` will give a nice visual representation of the peak in the Cubase equalizer.
+
 History
 =======
 As a novice music creator, I have sought a smoother control method than using the keyboard and mouse for fine tuning aspects in a DAW (Digital Audio Workstation).
